@@ -1,3 +1,13 @@
+# Phi-grib internal version of non-conformist
+
+This version is a fork of donlnz/nonconformist, respecting the original code as much as possible, but implementing two kinds of modifications
+1. lambdas were replaced by regular functions to permit the serialization of the estimators
+2. random_state was added in different places to make the results fully reproducible
+
+Modifications were marked with "MP" as comments
+
+Changes were introduced originally by José Carlos Gómez-Tamayo and further adapted by Manuel Pastor (March 2021)
+
 # nonconformist
 
 Python implementation of the conformal prediction framework [1].
