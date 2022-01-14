@@ -33,25 +33,34 @@ class BootstrapSampler(object):
 		np.random.seed(46)
 		
 		# avoid an infinite loop if y = 0s or 1s
-		if len (np.unique(y)) < 2:
-			n_samples = 0
+		if problem_type == 'classification':
+			if len (np.unique(y)) < 2:
+				n_samples = 0
 
-		n_selected = 0
-		# MP: changed to avoid errors when returning uniform Ys (only 0s or 1s)
-		# for i in range(n_samples):
-		while n_selected < n_samples:
-			idx = np.array(range(y.size))
-			train = np.random.choice(y.size, y.size, replace=True)
-			cal_mask = np.array(np.ones(idx.size), dtype=bool)
-			for j in train:
-				cal_mask[j] = False
-			cal = idx[cal_mask]
+			n_selected = 0
+			# MP: changed to avoid errors when returning uniform Ys (only 0s or 1s)
+			# for i in range(n_samples):
+			while n_selected < n_samples:
+				idx = np.array(range(y.size))
+				train = np.random.choice(y.size, y.size, replace=True)
+				cal_mask = np.array(np.ones(idx.size), dtype=bool)
+				for j in train:
+					cal_mask[j] = False
+				cal = idx[cal_mask]
 
-			if len(np.unique(y[cal]))==2:
-				n_selected+=1
+				if len(np.unique(y[cal]))>1:
+					n_selected+=1
+					yield train, cal
+		else:
+			for i in range(n_samples):
+				idx = np.array(range(y.size))
+				train = np.random.choice(y.size, y.size, replace=True)
+				cal_mask = np.array(np.ones(idx.size), dtype=bool)
+				for j in train:
+					cal_mask[j] = False
+				cal = idx[cal_mask]
+
 				yield train, cal
-
-			# yield train, cal
 
 
 class CrossSampler(object):
