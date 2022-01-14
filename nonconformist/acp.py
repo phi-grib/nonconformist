@@ -31,7 +31,15 @@ class BootstrapSampler(object):
 	"""
 	def gen_samples(self, y, n_samples, problem_type):
 		np.random.seed(46)
-		for i in range(n_samples):
+		
+		# avoid an infinite loop if y = 0s or 1s
+		if len (np.unique(y)) < 2:
+			n_samples = 0
+
+		n_selected = 0
+		# MP: changed to avoid errors when returning uniform Ys (only 0s or 1s)
+		# for i in range(n_samples):
+		while n_selected < n_samples:
 			idx = np.array(range(y.size))
 			train = np.random.choice(y.size, y.size, replace=True)
 			cal_mask = np.array(np.ones(idx.size), dtype=bool)
@@ -39,7 +47,11 @@ class BootstrapSampler(object):
 				cal_mask[j] = False
 			cal = idx[cal_mask]
 
-			yield train, cal
+			if len(np.unique(y[cal]))==2:
+				n_selected+=1
+				yield train, cal
+
+			# yield train, cal
 
 
 class CrossSampler(object):
@@ -168,6 +180,7 @@ class AggregatedCp(BaseEstimator):
 	             sampler=BootstrapSampler(),
 	             aggregation_func=None,
 	             n_models=10):
+		
 		self.predictors = []
 		self.n_models = n_models
 		self.predictor = predictor
@@ -188,27 +201,29 @@ class AggregatedCp(BaseEstimator):
 				self.agg_func = self.agg_max
 		else:
 			self.agg_func = self.agg_median 
+		
 		np.random.seed(46)
 
 	# MP functions replacing lambdas
 	def agg(self, x):
-    		return np.median(x, axis=2)
+		return np.median(x, axis=2)
 
 	def agg_median(self, x):
-    		return np.median(x, axis=2)
+		return np.median(x, axis=2)
 
 	def agg_mean(self, x):
-    		return np.mean(x, axis=2)
+		return np.mean(x, axis=2)
 
 	def agg_max(self, x):
-    		return np.max(x, axis=2)
+		return np.max(x, axis=2)
 
 	def agg_min(self, x):
-    		return np.min(x, axis=2)
+		return np.min(x, axis=2)
 
 	def fit(self, x, y):
 		"""Fit underlying conformal predictors.
 
+		
 		Parameters
 		----------
 		x : numpy array of shape [n_samples, n_features]
@@ -281,10 +296,23 @@ class AggregatedCp(BaseEstimator):
 				pred[:, :, i] = predictions
 			return pred
 		else:
-			def f(p, x):
-				return p.predict(x, significance if is_regression else None)
-			predictions = np.dstack([f(p, x) for p in self.predictors])
+			# MP: original code
+			# def f(p, x):
+			# 	return p.predict(x, significance if is_regression else None)
+			# predictions = np.dstack([f(p, x) for p in self.predictors])
+
+			s = significance if is_regression else None
+			predictions = np.dstack([p.predict (x, s) for p in self.predictors])
 			predictions = self.agg_func(predictions)
+
+			# MP: discarded patch to solve selection of uniform Y's (only 0s or 1s)
+			# intermediate = []
+			# for p in self.predictors:
+			# 	pi = p.predict (x,s)
+			# 	# print (np.shape(pi))
+			# 	if (np.shape(pi)[1] == 2):
+			# 		intermediate.append(pi)
+			# predictions = np.dstack(intermediate)
 
 			if significance and not is_regression:
 				return predictions >= significance
