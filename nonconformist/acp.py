@@ -108,7 +108,7 @@ class RandomSubSampler(object):
 
 	def gen_samples(self, y, n_samples, problem_type):
 		if problem_type == 'classification':
-			# MP added random state 
+			# MP: added random state 
 			splits = StratifiedShuffleSplit(
 					n_splits=n_samples,
 					test_size=self.cal_portion, 
@@ -116,6 +116,9 @@ class RandomSubSampler(object):
 				)
 
 			split_ = splits.split(np.zeros((y.size, 1)), y)
+
+			# TODO MP: this does not guarantee that the split contains a single 
+			# class. We must include some testing 
 		
 		else:
 			# MP added random state 
@@ -318,10 +321,12 @@ class AggregatedCp(BaseEstimator):
 			# intermediate = []
 			# for p in self.predictors:
 			# 	pi = p.predict (x,s)
-			# 	# print (np.shape(pi))
+			# 	print (np.shape(pi))
 			# 	if (np.shape(pi)[1] == 2):
 			# 		intermediate.append(pi)
+			# 	# intermediate.append(pi)
 			# predictions = np.dstack(intermediate)
+			# predictions = self.agg_func(predictions)
 
 			if significance and not is_regression:
 				return predictions >= significance
