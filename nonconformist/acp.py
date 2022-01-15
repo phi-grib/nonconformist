@@ -314,19 +314,24 @@ class AggregatedCp(BaseEstimator):
 			# predictions = np.dstack([f(p, x) for p in self.predictors])
 
 			s = significance if is_regression else None
-			predictions = np.dstack([p.predict (x, s) for p in self.predictors])
-			predictions = self.agg_func(predictions)
 
-			# MP: discarded patch to solve selection of uniform Y's (only 0s or 1s)
-			# intermediate = []
-			# for p in self.predictors:
-			# 	pi = p.predict (x,s)
-			# 	print (np.shape(pi))
-			# 	if (np.shape(pi)[1] == 2):
-			# 		intermediate.append(pi)
-			# 	# intermediate.append(pi)
-			# predictions = np.dstack(intermediate)
+			# MP: simplest version
+			# predictions = np.dstack([p.predict (x, s) for p in self.predictors])
 			# predictions = self.agg_func(predictions)
+
+			# MP: patch to solve selection of uniform Y's (only 0s or 1s)
+			intermediate = []
+			for p in self.predictors:
+				pi = p.predict (x,s)
+				# print (np.shape(pi))
+				if (np.shape(pi)[1] == 2):
+					intermediate.append(pi)
+				else:
+					print (f'WARNING: [nonconformist] one of the {len(self.predictors)} ACP predictors was not '
+						'trained appropriately because the split lacks representatives of either classes ')
+				# intermediate.append(pi)
+			predictions = np.dstack(intermediate)
+			predictions = self.agg_func(predictions)
 
 			if significance and not is_regression:
 				return predictions >= significance
